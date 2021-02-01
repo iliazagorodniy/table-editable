@@ -11,3 +11,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.table-container {
+  max-width: 600px;
+  margin: 50px;
+}
+
+.table-cell:focus {
+  outline: 0px;
+  background-color: whitesmoke;
+}
