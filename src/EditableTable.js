@@ -44,7 +44,7 @@ class EditableTable extends React.Component {
 	}
 
 	componentDidMount() {
-		if (localStorage.getItem('tableRows') !== "") {
+		if (localStorage.getItem('tableRows') !== "" && localStorage.length !== 0) {
 			let localStorageRawData = localStorage.getItem('tableRows');
 			let localStorageParsedData = localStorageRawData.split('AND').map((item) => JSON.parse(item));
 			this.setState({
