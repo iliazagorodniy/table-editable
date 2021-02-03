@@ -38,32 +38,32 @@ class EditableTable extends React.Component {
 	constructor() {
 		super();
 		this.state = {
-			rows: [
-				{
-					name: "Ilia",
-					type: "main",
-					color: "#000fff",
-					displayColorPicker: false,
-				},
-				{
-					name: "Max",
-					type: "side",
-					color: "#ef30ff",
-					displayColorPicker: false,
-				}
-			],
+			rows: []
 		};
 		this.onDragEnd = this.onDragEnd.bind(this);
 	}
 
 	componentDidMount() {
-		const rows = localStorage.getItem('elementsRows')
-		this.setState(rows);
+		if (localStorage.length !== 0) {
+			let newState = [];
+			for (let i = 0; i < localStorage.length; i++) {
+				let key = localStorage.key(i);
+				let rowObject = JSON.parse(localStorage.getItem(key))
+				newState.push(rowObject);
+			}
+			console.log(newState);
+			this.setState({ rows: newState } )
+		}
 	}
 
 	componentDidUpdate(prevProps, prevState, snapshot) {
-		const { rows } = this.props;
-		localStorage.setItem('rows', rows);
+		console.log("Component did Update!")
+		let {rows} = this.state;
+		console.log(rows);
+		localStorage.clear();
+		rows.forEach((row, index) => {
+			localStorage.setItem(`${index}`, JSON.stringify(row))
+		})
 	}
 
 	onDragEnd(result) {
@@ -92,11 +92,17 @@ class EditableTable extends React.Component {
 				color: "#000000",
 				displayColorPicker: false,
 			};
-			let newState = [...prevState.rows]
-			let newStateBeforeInsert = newState.slice(0, currentRowIndex + 1);
-			newStateBeforeInsert.push(newRowObj);
-			let newStateAfterInsert = newState.slice(currentRowIndex + 1, newState.length);
-			newState = newStateBeforeInsert.concat(newStateAfterInsert);
+			let newState;
+
+			if (prevState.rows.length === 0) {
+				newState = [newRowObj];
+			} else {
+				newState = [...prevState.rows]
+				let newStateBeforeInsert = newState.slice(0, currentRowIndex + 1);
+				newStateBeforeInsert.push(newRowObj);
+				let newStateAfterInsert = newState.slice(currentRowIndex + 1, newState.length);
+				newState = newStateBeforeInsert.concat(newStateAfterInsert);
+			}
 			return {
 				rows: newState,
 			}
@@ -193,7 +199,6 @@ class EditableTable extends React.Component {
 			bottom: '0px',
 			left: '0px',
 		}
-
 		return (
 			<div className="app-container">
 
@@ -210,83 +215,112 @@ class EditableTable extends React.Component {
 											<TableCell width={200} />
 										</TableRow>
 									</TableHead>
-									<TableBody
-										{...provided.droppableProps}
-										ref={provided.innerRef}
-										style={getListStyle(snapshot.isDraggingOver)}
-									>
-										{this.state.rows.map((row, index) => (
-											<Draggable key={index} draggableId={index+""} index={index}>
-												{(provided, snapshot) => (
+									{ this.state.rows.length === 0
+										?
+										<TableBody>
+											<TableRow>
+												<TableCell width={200} align="left" style={{color: "#bbb"}}>{"add name"}</TableCell>
 
-													<TableRow
-														key={index}
-														data-row-id={index}
-														ref={provided.innerRef}
-														{...provided.draggableProps}
-														style={getItemStyle(
-															snapshot.isDragging,
-															provided.draggableProps.style
-														)}
-													>
-														<TableCell width={200}
-															align="left"
-															contentEditable="true"
-															onBlur={this.handleCellChange("name")}
-															className="table-cell"
+												<TableCell width={200} align="left" style={{color: "#bbb"}}>{"add type"}</TableCell>
+
+												<TableCell width={200} align="left" style={{backgroundColor: "#bbb", padding: 0}}></TableCell>
+
+												<TableCell  width={200}>
+													<ButtonGroup color="primary">
+														<IconButton size="medium" style={{color: "#bbb"}} color="disabled" >
+															<DragHandleIcon />
+														</IconButton>
+
+														<IconButton size="medium" style={{color: "green"}} color="disabled" onClick={() => this.addRow(0)}>
+															<AddIcon />
+														</IconButton>
+
+														<IconButton size="medium" style={{color: "#bbb"}} color="disabled">
+															<DeleteIcon />
+														</IconButton>
+													</ButtonGroup>
+												</TableCell>
+											</TableRow>
+										</TableBody>
+										:
+										<TableBody
+											{...provided.droppableProps}
+											ref={provided.innerRef}
+											style={getListStyle(snapshot.isDraggingOver)}
+										>
+											{this.state.rows.map((row, index) => (
+												<Draggable key={index} draggableId={index+""} index={index}>
+													{(provided, snapshot) => (
+
+														<TableRow
+															key={index}
+															data-row-id={index}
+															ref={provided.innerRef}
+															{...provided.draggableProps}
+															style={getItemStyle(
+																snapshot.isDragging,
+																provided.draggableProps.style
+															)}
 														>
-															{row.name}
-														</TableCell>
+															<TableCell width={200}
+																align="left"
+																contentEditable="true"
+																onBlur={this.handleCellChange("name")}
+																className="table-cell"
+															>
+																{row.name}
+															</TableCell>
 
-														<TableCell width={200}
-															align="left"
-															contentEditable="true"
-															onBlur={this.handleCellChange("type")}
-															className="table-cell"
-														>
-															{row.type}
-														</TableCell>
+															<TableCell width={200}
+																align="left"
+																contentEditable="true"
+																onBlur={this.handleCellChange("type")}
+																className="table-cell"
+															>
+																{row.type}
+															</TableCell>
 
-														<TableCell width={200}
-															onClick={ () => this.handleClick(index) }
-															align="left"
-															style={{backgroundColor: row.color, padding: 0}}
-															className="table-cell"
-														>
-														</TableCell>
+															<TableCell width={200}
+																onClick={ () => this.handleClick(index) }
+																align="left"
+																style={{backgroundColor: row.color, padding: 0}}
+																className="table-cell"
+															>
+															</TableCell>
 
-														<TableCell  width={200}>
-															<ButtonGroup color="primary">
-																<IconButton size="medium" color="primary" aria-label="delete" {...provided.dragHandleProps}>
-																	<DragHandleIcon />
-																</IconButton>
+															<TableCell  width={200}>
+																<ButtonGroup color="primary">
+																	<IconButton size="medium" color="primary" aria-label="delete" {...provided.dragHandleProps}>
+																		<DragHandleIcon />
+																	</IconButton>
 
-																<IconButton size="medium" color="primary" aria-label="delete" onClick={() => this.addRow(index)}>
-																	<AddIcon />
-																</IconButton>
+																	<IconButton size="medium" color="primary" aria-label="delete" onClick={() => this.addRow(index)}>
+																		<AddIcon />
+																	</IconButton>
 
-																<IconButton size="medium" color="secondary" aria-label="delete" onClick={() => this.deleteRow(index)}>
-																	<DeleteIcon />
-																</IconButton>
-															</ButtonGroup>
-														</TableCell>
-														{ row.displayColorPicker ?
-															<div style={ popover }>
-																<div style={ cover } onClick={ () => this.handleClose(index) }/>
-																<ChromePicker
-																	color={row.color}
-																	onChange={ this.handleColorChange }
-																	onChangeComplete={ this.handleColorChange }
-																/>
-															</div>
-															: null
-														}
-													</TableRow>
-												)}
-											</Draggable>
-										))}
-										{provided.placeholder}
-									</TableBody>
+																	<IconButton size="medium" color="secondary" aria-label="delete" onClick={() => this.deleteRow(index)}>
+																		<DeleteIcon />
+																	</IconButton>
+																</ButtonGroup>
+															</TableCell>
+															{ row.displayColorPicker ?
+																<div style={ popover }>
+																	<div style={ cover } onClick={ () => this.handleClose(index) }/>
+																	<ChromePicker
+																		color={row.color}
+																		onChange={ this.handleColorChange }
+																		onChangeComplete={ this.handleColorChange }
+																	/>
+																</div>
+																: null
+															}
+														</TableRow>
+													)}
+												</Draggable>
+											))}
+											{provided.placeholder}
+										</TableBody>
+									}
 								</Table>
 							</TableContainer>
 						)}
